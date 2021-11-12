@@ -6,15 +6,13 @@ include_once 'header.php';
 <main class="flex-shrink-0 mt-auto">
   <div class="container">
 
+<pre>
+    <?php
 
-<?php
-    if (@$_POST['enviado']==10){      
-        echo 'ok';
-    }
-    else {
-        echo 'no';
-    }
-?> 
+    include_once 'processamento.php';
+
+    ?> 
+</pre>
 
   </div>
 </main>
