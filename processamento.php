@@ -1,13 +1,15 @@
 <?php
 
 require_once 'config.php';
-require_once 'producao.php';
-require_once 'autor.php';
+
+require_once __DIR__ . '/vendor/autoload.php';
+use Uspdev\Replicado\Lattes;
+
+$dir = "uploads/";
 
 $okfiles = true; // booleana para checar que os arquivos subiram ok
 
 // arquivo dedalus
-$dir = 'dedalus/';
 $dedalusfile = $dir . basename($_FILES['dedalus']['name']);
 if (!move_uploaded_file($_FILES['dedalus']['tmp_name'], $dedalusfile)){
     echo "Falha ao carregar arquivo Dedalus\n";
@@ -15,7 +17,6 @@ if (!move_uploaded_file($_FILES['dedalus']['tmp_name'], $dedalusfile)){
 }
 
 // arquivo tainacan produção
-$dir = 'tainacanprod/';
 $tainacanprodfile = $dir . basename($_FILES['tainacanprod']['name']);
 if (!move_uploaded_file($_FILES['tainacanprod']['tmp_name'], $tainacanprodfile)){
     echo "Falha ao carregar arquivo Tainacan Produção\n";
@@ -23,7 +24,6 @@ if (!move_uploaded_file($_FILES['tainacanprod']['tmp_name'], $tainacanprodfile))
 }
 
 // arquivo tainacan autores
-$dir = 'tainacanaut/';
 $tainacanautfile = $dir . basename($_FILES['tainacanaut']['name']);
 if (!move_uploaded_file($_FILES['tainacanaut']['tmp_name'], $tainacanautfile)){
     echo "Falha ao carregar arquivo Tainacan Autores\n";
@@ -49,12 +49,12 @@ if ($okfiles){ // se ok, subiu os arquivos, inicia processamento
     $colSYSNO = -1; // identificador da coluna que contém o sysno
     while (($data = fgetcsv($fileP)) !== FALSE) {
         //identifica coluna com o sysno
-        if ($rowD==0){
+        if ($rowP==0){
             foreach ($data as $key=>$val){
                 $aux = explode("|", $val);
                 if ($aux[0]=='SYSNO') $colSYSNO = $key;
             }
-            $rowD++;
+            $rowP++;
             continue;
         }
         // obtendo ids 
@@ -153,15 +153,16 @@ if ($okfiles){ // se ok, subiu os arquivos, inicia processamento
         }
         else { // grava autor em array
             foreach ($nusps as $key => $nusp) {
-                $autorusp[$nusp]['special_item_id'] = ''; // apenas inicializando o índice, será checado mais abaixo 
+                  
                 // checa se já existe
+                $autorusp[$nusp]['special_item_id'] = '';
                 if (array_key_exists($nusp, $aut_cadastrado)) {
                     $autorusp[$nusp]['special_item_id'] = $aut_cadastrado[$nusp];
                 } 
 
+                // informações básicas
                 $autorusp[$nusp]['nusp'] = $nusp;
                 $autorusp[$nusp]['nome'] = $autores[$key];
-                //$autorusp[$nusp]['unidadeusp'] = $unidades[$key];
                 
                 // unidades a que pertence/pertenceu
                 if (!array_key_exists('unidadeusp', $autorusp[$nusp])) {
@@ -169,18 +170,36 @@ if ($okfiles){ // se ok, subiu os arquivos, inicia processamento
                 } else {
                     $autorusp[$nusp]['unidadeusp'].= "||" . $unidades[$key];
                 }              
-                
+ /**** em outro bloco **/               
                 // nome por extenso
                 $aux = explode(",", $autorusp[$nusp]['nome']);
                 $autorusp[$nusp]['nomeporextenso'] = trim($aux[1] . ' ' . $aux[0]);
+                                
                 // obtém link lattes
-                // get idLattes
-                $endpoint = LINKAPI . '/lattes/idLattes/' . $nusp;
-                $json = file_get_contents($endpoint);
-                $resLattes = json_decode($json, true);
-                $autorusp[$nusp]['lattes'] = LINKLATTES . $resLattes['idLattes'];
-                if ($autorusp[$nusp]['lattes'] == LINKLATTES)
-                    $autorusp[$nusp]['lattes'] = '';
+                $idLattes = Lattes::id($nusp);
+                $autorusp[$nusp]['lattes'] = LINKLATTES . $idLattes;
+                if ($autorusp[$nusp]['lattes']==LINKLATTES) 
+                    $autorusp[$nusp]['lattes'] = '';                
+                
+                // se tem lattes, obtem outras informações
+                if ($idLattes!=''){
+                    // minibiografia
+                    $resumocv = Lattes::retornarResumoCV($nusp);
+                    $autorusp[$nusp]['minibiografia'] = $resumocv;
+                    // link orcid
+                    $idOrcid = Lattes::retornarOrcidID($nusp);
+                    $autorusp[$nusp]['orcid'] = LINKORCID . $idOrcid;
+                    if ($autorusp[$nusp]['orcid']==LINKORCID) 
+                        $autorusp[$nusp]['orcid'] = '';
+                    else 
+                        $autorusp[$nusp]['orcid'] = $idOrcid;    
+                }
+                else {
+                    $autorusp[$nusp]['minibiografia'] = '';
+                    $autorusp[$nusp]['orcid'] = '';
+                }
+ /**** em outro bloco **/                               
+                        
                 // vincula a produção atual
                 if ($linha['special_item_id'] != '') {
                     if (!array_key_exists('producao', $autorusp[$nusp])) {
@@ -196,27 +215,23 @@ if ($okfiles){ // se ok, subiu os arquivos, inicia processamento
     fclose($csvP);
     
     // loop nos autores detectados para gera csv
-    
-    /*echo "AUTORUSP <br>";
-    print_r($autorusp);
-    echo "<hr>\nAUT_CADASTRADO<BR>";
-    print_r($aut_cadastrado);
-    die();*/
-    
     if (!$producaonova){
         $row = 0;
         foreach ($autorusp as $nusp=>$autor){
+        
+            // verifica repetição de unidades do autor e as retira
+            $uns = explode("||", $autor['unidadeusp']);
+            $unsunique = array_unique($uns);
+            $autor['unidadeusp'] = implode("||", $unsunique);
+            
+            
+            
             
             // escreve cabecalho
             if ($row==0){
                 $keys = array_keys($autor);
                 fputcsv($csvA, $keys);
             }
-           
-            // verifica repetição de unidades do autor e as retira
-            $uns = explode("||", $autor['unidadeusp']);
-            $unsunique = array_unique($uns);
-            $autor['unidadeusp'] = implode("||", $unsunique);
             
             // escreve no arquivo csv do autores
             fputcsv($csvA, $autor);
@@ -244,6 +259,9 @@ if ($okfiles){ // se ok, subiu os arquivos, inicia processamento
             . "</ol>\n"
             . "</p>\n";
     }
+}
+else {
+    echo "Problema com upload dos arquivos.";
 }
 
 
