@@ -3,6 +3,7 @@
 require_once 'config.php';
 
 require_once __DIR__ . '/vendor/autoload.php';
+use Uspdev\Replicado\Pessoa;
 use Uspdev\Replicado\Lattes;
 
 $dir = "uploads/";
@@ -146,10 +147,12 @@ if ($okfiles){ // se ok, subiu os arquivos, inicia processamento
         $departamentos = explode(";", $data[16]); //bug no csv
         // estes 4 arrays devem ter o mesmo tamanho, com exceção do $departamentosusp, que pode ser menor
         if (!(count($autores)==count($nusps))){
-            echo "SYSNO " . $sysno . " -> Quantidade AutoresUSP diferente de NúmerosUSP<br>\n";
+            echo "SYSNO " . $sysno . " -> Quantidade AutoresUSP diferente de NúmerosUSP<br>"
+            . $data[13] . " - " . $data[14] . "\n";
         }
         elseif (!(count($autores)==count($unidades))){
-            echo "SYSNO " . $sysno . " -> Quantidade AutoresUSP diferente de UnidadesUSP<br>\n";
+            echo "SYSNO " . $sysno . " -> Quantidade AutoresUSP diferente de UnidadesUSP<br>\n"
+            . $data[13] . " - " . $data[15] . "\n";        
         }
         else { // grava autor em array
             foreach ($nusps as $key => $nusp) {
@@ -169,36 +172,7 @@ if ($okfiles){ // se ok, subiu os arquivos, inicia processamento
                     $autorusp[$nusp]['unidadeusp'] = $unidades[$key];
                 } else {
                     $autorusp[$nusp]['unidadeusp'].= "||" . $unidades[$key];
-                }              
- /**** em outro bloco **/               
-                // nome por extenso
-                $aux = explode(",", $autorusp[$nusp]['nome']);
-                $autorusp[$nusp]['nomeporextenso'] = trim($aux[1] . ' ' . $aux[0]);
-                                
-                // obtém link lattes
-                $idLattes = Lattes::id($nusp);
-                $autorusp[$nusp]['lattes'] = LINKLATTES . $idLattes;
-                if ($autorusp[$nusp]['lattes']==LINKLATTES) 
-                    $autorusp[$nusp]['lattes'] = '';                
-                
-                // se tem lattes, obtem outras informações
-                if ($idLattes!=''){
-                    // minibiografia
-                    $resumocv = Lattes::retornarResumoCV($nusp);
-                    $autorusp[$nusp]['minibiografia'] = $resumocv;
-                    // link orcid
-                    $idOrcid = Lattes::retornarOrcidID($nusp);
-                    $autorusp[$nusp]['orcid'] = LINKORCID . $idOrcid;
-                    if ($autorusp[$nusp]['orcid']==LINKORCID) 
-                        $autorusp[$nusp]['orcid'] = '';
-                    else 
-                        $autorusp[$nusp]['orcid'] = $idOrcid;    
-                }
-                else {
-                    $autorusp[$nusp]['minibiografia'] = '';
-                    $autorusp[$nusp]['orcid'] = '';
-                }
- /**** em outro bloco **/                               
+                }                                        
                         
                 // vincula a produção atual
                 if ($linha['special_item_id'] != '') {
@@ -223,9 +197,29 @@ if ($okfiles){ // se ok, subiu os arquivos, inicia processamento
             $uns = explode("||", $autor['unidadeusp']);
             $unsunique = array_unique($uns);
             $autor['unidadeusp'] = implode("||", $unsunique);
+
+            // nome por extenso
+            $autor['nomeporextenso'] = Pessoa::nomeCompleto($nusp);  
             
-            
-            
+            // obtém link lattes
+            $idLattes = Lattes::id($nusp);
+            $autor['lattes'] = LINKLATTES . $idLattes;
+            if ($autor['lattes']==LINKLATTES) 
+                $autor['lattes'] = '';
+
+            // se tem lattes, obtem outras informações
+            if ($idLattes!=''){
+                // minibiografia
+                $resumocv = Lattes::retornarResumoCV($nusp);
+                $autor['minibiografia'] = $resumocv;
+                // link orcid
+                $idOrcid = Lattes::retornarOrcidID($nusp);
+                $autor['orcid'] = $idOrcid;  
+            }
+            else {
+                $autor['minibiografia'] = '';
+                $autor['orcid'] = '';
+            }                  
             
             // escreve cabecalho
             if ($row==0){
