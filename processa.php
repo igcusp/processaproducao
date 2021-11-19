@@ -6,7 +6,7 @@ include_once 'header.php';
 <main class="flex-shrink-0 mt-auto">
   <div class="container">
 
-<pre>
+<pre class="mt-3">
     <?php
 
     include_once 'processamento.php';

@@ -148,11 +148,11 @@ if ($okfiles){ // se ok, subiu os arquivos, inicia processamento
         // estes 4 arrays devem ter o mesmo tamanho, com exceção do $departamentosusp, que pode ser menor
         if (!(count($autores)==count($nusps))){
             echo "SYSNO " . $sysno . " -> Quantidade AutoresUSP diferente de NúmerosUSP<br>"
-            . $data[13] . " - " . $data[14] . "\n";
+            . $data[13] . " - " . $data[14] . "\n\n";
         }
         elseif (!(count($autores)==count($unidades))){
             echo "SYSNO " . $sysno . " -> Quantidade AutoresUSP diferente de UnidadesUSP<br>\n"
-            . $data[13] . " - " . $data[15] . "\n";        
+            . $data[13] . " - " . $data[15] . "\n\n";        
         }
         else { // grava autor em array
             foreach ($nusps as $key => $nusp) {
