@@ -193,6 +193,11 @@ if ($okfiles){ // se ok, subiu os arquivos, inicia processamento
         $row = 0;
         foreach ($autorusp as $nusp=>$autor){
         
+            // checa se número usp é inteiro - tem registros sem número usp
+            if (!is_int($nusp)) {
+                continue;
+            }
+            
             // verifica repetição de unidades do autor e as retira
             $uns = explode("||", $autor['unidadeusp']);
             $unsunique = array_unique($uns);
