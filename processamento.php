@@ -99,7 +99,7 @@ if ($okfiles){ // se ok, subiu os arquivos, inicia processamento
         }
         
         // agora outros itens que não precisam de processamento
-        $linha['sysno'] = $data[0];
+        $linha['sysno'] = $data[0]; 
         $linha['titulo'] = $data[2];
         $linha['doi'] = $data[1];
         $linha['fonte_publicacao'] = $data[4];
@@ -115,8 +115,11 @@ if ($okfiles){ // se ok, subiu os arquivos, inicia processamento
         $linha['url'] = $data[19];
         $linha['resumo'] = $data[20];
         $linha['abstract'] = $data[21];
+        $linha['special_document']  = '';
+        $linha['special_attachments'] = '';
         
         // agora itens que precisamos de pouco processamento
+        
         $autores = explode(";", $data[3]); // não só usp
         $linha['autores'] = implode("||", $autores);
         
@@ -131,11 +134,34 @@ if ($okfiles){ // se ok, subiu os arquivos, inicia processamento
             continue;
         }
         
+        // encontrar arquivos disponíveis para importação
+        $pasta = filter_input(INPUT_POST, 'pasta');
+        $pasta.= '/';
+        if ($pasta!=''){
+            $arquivos = glob(DIR . $pasta.'/'.$linha['sysno']."*");
+            $size = count($arquivos);
+            if ($size>0){ // se encontrou arquivos               
+                $anexos = array();
+                foreach($arquivos as $k=>$a){
+                    $aux = explode('/', $arquivos[$k]);
+                    $sizeaux = count($aux);
+                    if ($k==0){// special_document
+                        $linha['special_document'] = "file:" . URL . $pasta . $aux[$sizeaux-1];
+                    }
+                    else {// special_attachments
+                        $anexos[] = URL . $pasta . $aux[$sizeaux-1];
+                    }
+                }
+                $sizeanexos = count($anexos);
+                if($sizeanexos>0){
+                    $linha['special_attachments'] = implode("||", $anexos);// special_attachments
+                }
+                $anexos = NULL;                  
+            }
+        } 
+        
         // escreve no arquivo csv da produção
         fputcsv($csvP, $linha);
-        
-        // incrementa linha
-        $rowD++;
         
         // agora muito processamento
         
@@ -188,7 +214,7 @@ if ($okfiles){ // se ok, subiu os arquivos, inicia processamento
     } // FIM loop no dedalus
     fclose($csvP);
     
-    // loop nos autores detectados para gera csv
+    // loop nos autores detectados para gerar csv
     if (!$producaonova){
         $row = 0;
         foreach ($autorusp as $nusp=>$autor){

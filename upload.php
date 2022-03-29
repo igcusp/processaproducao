@@ -23,7 +23,7 @@ include_once 'header.php';
             </div>
             <div class="mb-3">
                 <label for="pasta" class="form-label">Pasta onde estão os arquivos (PDF e outros) no servidor</label>
-                <input class="form-control form-control-sm" type="text" id="pasta" value="files">
+                <input class="form-control form-control-sm" type="text" id="pasta" name="pasta">
             </div>
             <input type="hidden" id="enviado" name="enviado" value="10" />
             <div class="mb-3">

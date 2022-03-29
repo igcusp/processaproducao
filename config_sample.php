@@ -2,7 +2,9 @@
 
 define("LINKLATTES", "https://lattes.cnpq.br/");
 
-define("DIR", "pasta-no-servidor"); // pasta onde está o script
+define("DIR", "pasta-no-servidor"); // pasta onde estará subdir com arquivos
+define("URL", "https://site.br/"); // url do website de onde serão importados os arquivos
+                                    // será somado a pasta definida em upload.php
 
 // configuracoes para usar o uspdev/replicado
 putenv('REPLICADO_HOST=192.168.100.99');

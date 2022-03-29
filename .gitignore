@@ -5,4 +5,4 @@ config.php
 # netbeans
 nbproject/
 
-tests.php
+test*
